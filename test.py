@@ -1,2 +1,5 @@
+import numpy as np
 
-print("Hello World")
+x = np.array([])
+y = np.append(x,[1,2,3])
+print(y)
