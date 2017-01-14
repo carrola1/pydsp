@@ -56,8 +56,23 @@ class GenSqWv(BitGen):
         super(GenSqWv, self).__init__(patterni,upSampRate)
 
 class GenHexPat(BitGen):
+    def __init__(self,hexPat,upSampRate=1,zerosOut=False):
+        patterni  = "{0:04b}".format(int(hexPat))
+        patterni = np.array(list(map(int,patterni)))
 
-class GenRndBits:
+        if (zerosOut == False):
+            patterni = patterni*2-1
+        super(GenHexPat, self).__init__(patterni,upSampRate)
+
+class GenArbArr(BitGen):
+    def __init__(self,pattern,upSampRate=1,zerosOut=False):
+        if (zerosOut == False):
+            patterni = pattern*2-1
+        else:
+            patterni = pattern
+        super(GenArbArr, self).__init__(patterni,upSampRate)
+
+#class GenRndBits:
 
 class GenPn(BitGen):
     TAPS = {23:np.array([23,18,1]),
@@ -87,7 +102,7 @@ class GenPn(BitGen):
             shiftReg = np.append(fBXOR,shiftReg[0:-1])            
         return pnOut
 
-test = GenPn(23,1,False)
+test = GenPn(15,1,False)
 x = test.getArr(20)
 print(x)
 

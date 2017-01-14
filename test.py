@@ -1,5 +1,5 @@
 import numpy as np
 
-x = np.array([])
-y = np.append(x,[1,2,3])
-print(y)
+patterni  = "{0:08b}".format(int(0x53))
+pattern = np.array(list(map(int,patterni)))
+print(pattern)
