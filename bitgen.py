@@ -57,7 +57,7 @@ class GenSqWv(BitGen):
 
 class GenHexPat(BitGen):
     def __init__(self,hexPat,upSampRate=1,zerosOut=False):
-        patterni  = "{0:04b}".format(int(hexPat))
+        patterni  = "{0:08b}".format(int(hexPat))
         patterni = np.array(list(map(int,patterni)))
 
         if (zerosOut == False):
@@ -102,8 +102,8 @@ class GenPn(BitGen):
             shiftReg = np.append(fBXOR,shiftReg[0:-1])            
         return pnOut
 
-test = GenPn(15,1,False)
-x = test.getArr(20)
+test = GenArbArr(np.array([1,0,1,1]))
+x = test.getArr(10)
 print(x)
 
 
