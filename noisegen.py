@@ -15,29 +15,29 @@ class AWGN():
     def __init__(self,rmsSig,snr):
         self.sigmaN = rmsSig/10**(snr/20)
 
-    def getSampPlusN(self,sampIn):
+    def addNoise(self,sampsIn):
         '''
-        Description:    Add noise to input sample
+        Description:    Add noise to input sample or array
 
-        Params:         sampIn: Input sample (float)
+        Params:         sampsIn:    Input sample (float)
 
-        Returns:        sampOut: Output sample with noise added (float)
+        Returns:        sampsOut:   Output sample(s) with noise added (float)
         '''
-        sampOut = sampIn + np.random.normal(0,self.sigmaN)
-        return sampOut
+        sampsOut = sampsIn + np.random.normal(0,self.sigmaN,sampsIn.size)
+        return sampsOut
 
-    def getArrPlusN(self,arrIn):
+    def getNoise(self,numSamps):
         '''
-        Description:    Add noise to input array
+        Description:    Get noise samples from gaussian distribution
 
-        Params:         sampIn: Input array (float)
+        Params:         numSamps:   # of noise samples to return
 
-        Returns:        sampOut: Output array with noise added (float)
+        Returns:        sampsOut:   Output sample or array
         '''
-        arrOut = arrIn + np.random.normal(0,self.sigmaN,arrIn.size)
-        return arrOut
+        sampsOut = np.random.normal(0,self.sigmaN,numSamps)
+        return sampsOut
 
-'''
+
 # EXAMPLE:
 import matplotlib.pyplot as plt
 from fft import Fft
@@ -45,13 +45,13 @@ fs = 100
 t = np.arange(0,1/fs*800,1/fs/100)
 sig = np.sin(2*np.pi*fs*t)
 test = AWGN(.70710678,10)
-sigN = test.getArrPlusN(sig)
+sigN = test.addNoise(sig)
 plt.figure(1)
-plt.plot(t,sig,'r',t,sigN,'b')
+plt.plot(t[0:500],sig[0:500],'r',t[0:500],sigN[0:500],'b')
 tFft = Fft(10000,'Hz',8,'none')
 freq,amp = tFft.plot(sigN)
 freqUnit = freq[1]-freq[0]
 snr = np.max(amp) - np.mean(amp[int(freq.size/2):]) - 10*np.log10(5000/freqUnit)
 print(snr)
-plt.draw()
-'''
+plt.show()
+

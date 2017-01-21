@@ -98,7 +98,7 @@ class Fft:
         plt.xlabel(('Freq (' + self.units + ')'))
         plt.ylabel('Amplitude (dB)')
         plt.title('FFT')
-        plt.show()
+        plt.draw()
         return freq,resp
 
     def calc(self,data):
