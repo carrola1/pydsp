@@ -9,9 +9,9 @@ class MovAvg:
     
     Attributes:     length: length of moving average filter
     
-    Methods:        update(newVal): Update filter buf and return new output.
+    Methods:        update(newVal): Update filter buf and return new output
                     clear():        Clear filter buffer
-                    calc():         Return filtered data array
+                    calc(data):     Return filtered data array
     '''
     def __init__(self, length):
         self.length = length

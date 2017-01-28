@@ -9,22 +9,22 @@ class AWGN():
     Attributes:     rmsSig:     RMS of signal
                     snr:        Target SNR (dB)
                     
-    Methods:        getSampPlusN(sampIn):   Add noise to input sample
-                    getArrPlusN(arrIn):     Add noise to input array
+    Methods:        addNoise(dataIn):       Add noise to input data
+                    getNoise(numSamps):     Get noise samples
     '''
     def __init__(self,rmsSig,snr):
         self.sigmaN = rmsSig/10**(snr/20)
 
-    def addNoise(self,sampsIn):
+    def addNoise(self,dataIn):
         '''
         Description:    Add noise to input sample or array
 
-        Params:         sampsIn:    Input sample (float)
+        Params:         dataIn:     Input sample (float)
 
-        Returns:        sampsOut:   Output sample(s) with noise added (float)
+        Returns:        dataOut:    Output sample(s) with noise added (float)
         '''
-        sampsOut = sampsIn + np.random.normal(0,self.sigmaN,sampsIn.size)
-        return sampsOut
+        dataOut = dataIn + np.random.normal(0,self.sigmaN,dataIn.size)
+        return dataOut
 
     def getNoise(self,numSamps):
         '''
@@ -37,8 +37,27 @@ class AWGN():
         sampsOut = np.random.normal(0,self.sigmaN,numSamps)
         return sampsOut
 
+class EbNo(AWGN):
+    ''' 
+    Designer:       Andrew Carroll
 
-# EXAMPLE:
+    Description:    Additive white noise generator targetting Eb/No
+    
+    Attributes:     fData:      Bit rate in same units as fSamp
+                    fSamp:      Sample rate in same units as fData
+                    ebNo:       Target Eb/No (dB)
+                    rmsSig:     (*optional) RMS signal energy. 
+                                    Default = sqrt(2)/2
+                    
+    Methods:        addNoise(dataIn):       Add noise to input data
+                    getNoise(numSamps):     Get noise samples
+    '''
+    def __init__(self,fData,fSamp,ebNo,rmsSig=.70710678):
+        snr = ebNo - 10*np.log10(fSamp/fData)
+        super(EbNo, self).__init__(rmsSig,snr)
+
+'''
+# EXAMPLE (AWGN):
 import matplotlib.pyplot as plt
 from fft import Fft
 fs = 100
@@ -54,4 +73,4 @@ freqUnit = freq[1]-freq[0]
 snr = np.max(amp) - np.mean(amp[int(freq.size/2):]) - 10*np.log10(5000/freqUnit)
 print(snr)
 plt.show()
-
+'''

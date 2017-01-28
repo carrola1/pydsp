@@ -1,5 +1,6 @@
 import numpy as np
+import scipy.signal as signal
+import matplotlib.pyplot as plt
 
-patterni  = "{0:08b}".format(int(0x53))
-pattern = np.array(list(map(int,patterni)),dtype=int)
-print(pattern)
+x = np.array([5,-5])
+print(np.sign(x))

@@ -236,8 +236,8 @@ class GenPn():
         Returns:        None
         '''
         self.upSampCnt = 0
-        self.__shiftReg = np.ones(pow2)
-        self.pnOut = self.__shiftReg[pow2-1]
+        self.__shiftReg = np.ones(self.pow2)
+        self.pnOut = self.__shiftReg[self.pow2-1]
 
     def __getSeq(self):
         pnSeq = np.zeros(2**self.pow2-1)
@@ -263,10 +263,10 @@ class GenPn():
             fBXOR = sum(fB) % 2
             self.__shiftReg = np.append(fBXOR,self.__shiftReg[0:-1])
             self.pnOut = self.__shiftReg[self.pow2-1]
+            if (self.zerosOut == False):
+                self.pnOut = self.pnOut*2-1
         else:
-            self.upSampCnt += 1
-        if (self.zerosOut == False):
-            self.pnOut = self.pnOut*2-1    
+            self.upSampCnt += 1    
         return self.pnOut
 
     def getArr(self,numPn):
@@ -288,17 +288,17 @@ class GenPn():
         else:
             for ii, elem in enumerate(pnArr):
                 self.upSampCnt = self.upSampRate-1
-                pnArr[ii] = getSamp
+                pnArr[ii] = self.getSamp()
         self.upSampCnt = 0
         return np.repeat(pnArr,self.upSampRate)
 
-
 '''
 # EXAMPLE:
-test = GenPn(9,2)
-x = test.getArr(2**9+10)
-print(x.size)
-print(2**9+10)
+test = GenPn(9,3)
+x = np.zeros(200)
+for ii in range(0,x.size):
+    x[ii] = test.getSamp()
+print(x)
 '''
     
 

@@ -10,9 +10,9 @@ class IntDump:
     Attributes:     length:         Length of moving average filter
                     dumpCnt:        Dump counter (counts samples)
     
-    Methods:        update(newVal): Update filter buffer and return new output.
+    Methods:        update(newVal): Update filter buffer and return new output
                     clear():        Clear filter buffer
-                    calc():         Return filtered data array
+                    calc(data):     Return filtered data array
     '''
     def __init__(self, length):
         self.length = length
@@ -29,7 +29,7 @@ class IntDump:
                         filtOutValid:   Valid output flag
         '''
         filtOut = sum(self.__buf)/self.length
-        self.__buf[1:] = self.__buf[0:-2]
+        self.__buf[1:] = self.__buf[0:-1]
         self.__buf[0] = newVal
         self.dumpCnt += 1
         if (self.dumpCnt == self.length):
