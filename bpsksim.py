@@ -12,7 +12,7 @@ import intdump
 F_SAMP = 10e6
 F_BIT = 100e3
 F_CAR = 2.5e6
-NUM_BITS = 5000
+NUM_BITS = 500
 NUM_SAMPS = int(F_SAMP/F_BIT*NUM_BITS)
 EB_NO = 8
 BIT_W = 10
@@ -74,12 +74,12 @@ for ii in range(0,NUM_SAMPS):
         else:
             sampDly += 1
     
-'''    
+"""
 plt.figure()
 plt.plot(tArr[0:int(F_SAMP/F_BIT*20)],tSigI[0:int(F_SAMP/F_BIT*20)],'b',
             tArr[0:int(F_SAMP/F_BIT*20)],tSigQ[0:int(F_SAMP/F_BIT*20)],'r')
 plt.show()
-'''
+"""
 bitGen.upSampRate = 1
 bitGen.reset()
 bitSent = bitGen.getArr(NUM_BITS)

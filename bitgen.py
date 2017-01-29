@@ -1,7 +1,7 @@
 import numpy as np
 
 class __BitGen:
-    ''' 
+    """
     Designer:       Andrew Carroll
 
     Description:    Generic pattern bit generation with upsampling option.
@@ -12,7 +12,7 @@ class __BitGen:
     Methods:        reset():            Reset pattern and upsampling
                     getSamp():          Get next sample in pattern
                     getArr(numBits):    Get next numBits in pattern
-    '''
+    """
     def __init__(self,pattern,upSampRate):
         self.upSampRate = upSampRate
         self.pattern = pattern
@@ -21,26 +21,26 @@ class __BitGen:
         self.upSampCnt = 0
 
     def reset(self):
-        '''
+        """
         Description:    Resets pattern and upsample counter
 
         Params:         None
 
         Returns:        None
-        '''
+        """
         self.ind = 0
         self.upSampCnt = 0
         return
 
     def getSamp(self):
-        '''
+        """
         Description:    Gets new sample (new bit or hold previous value during
                             upsampling)
 
         Params:         None
 
         Returns:        newSamp:    Single bit value 
-        '''
+        """
         newSamp = self.pattern[self.ind]
         if (self.upSampCnt == self.upSampRate-1):
             self.upSampCnt = 0 
@@ -53,13 +53,13 @@ class __BitGen:
         return newSamp
 
     def getArr(self,numBits):
-        '''
+        """
         Description:    Gets next specified # of bits in pattern
 
         Params:         numBits:    # of bits to return
 
         Returns:        dataOut:    Upsampled array of bits
-        '''
+        """
         dataOut = np.array([])
         for ii in range(0,int(np.ceil(numBits/self.__patLen))):
             if (ii == int(np.ceil(numBits/self.__patLen))-1):
@@ -70,7 +70,7 @@ class __BitGen:
         return np.repeat(dataOut,self.upSampRate)
 
 class GenSqWv(__BitGen):
-    ''' 
+    """
     Designer:       Andrew Carroll
 
     Description:    Subclass of __BitGen, generates square wave pattern
@@ -80,7 +80,7 @@ class GenSqWv(__BitGen):
                                     bit (default = False)
                     
     Methods:        See BitGen class
-    '''
+    """
     def __init__(self,upSampRate=1,zerosOut=False):
         if (zerosOut == False):
             patterni = np.array([-1,1])
@@ -89,7 +89,7 @@ class GenSqWv(__BitGen):
         super(GenSqWv, self).__init__(patterni,upSampRate)
 
 class GenHexPat(__BitGen):
-    ''' 
+    """
     Designer:       Andrew Carroll
 
     Description:    Subclass of __BitGen, generates 8-bit hex pattern
@@ -100,7 +100,7 @@ class GenHexPat(__BitGen):
                                     bit (default = False)
                     
     Methods:        See BitGen class
-    '''
+    """
     def __init__(self,hexPat,upSampRate=1,zerosOut=False):
         patterni  = "{0:08b}".format(int(hexPat))
         patterni = np.array(list(map(int,patterni)))
@@ -110,7 +110,7 @@ class GenHexPat(__BitGen):
         super(GenHexPat, self).__init__(patterni,upSampRate)
 
 class GenArbArr(__BitGen):
-    ''' 
+    """
     Designer:       Andrew Carroll
 
     Description:    Subclass of __BitGen, generates arbitrary pattern
@@ -121,7 +121,7 @@ class GenArbArr(__BitGen):
                                     bit (default = False)
                     
     Methods:        See BitGen class
-    '''
+    """
     def __init__(self,pattern,upSampRate=1,zerosOut=False):
         if (zerosOut == False):
             patterni = pattern*2-1
@@ -130,7 +130,7 @@ class GenArbArr(__BitGen):
         super(GenArbArr, self).__init__(patterni,upSampRate)
 
 class GenRndBits:
-    ''' 
+    """
     Designer:       Andrew Carroll
 
     Description:    Generates random bit pattern
@@ -142,7 +142,7 @@ class GenRndBits:
     Methods:        reset():            Reset upsampling
                     getSamp():          Get next sample
                     getArr(numBits):    Get array of upsampled random bits
-    '''
+    """
     def __init__(self,upSampRate=1,zerosOut=False):
         self.upSampRate = upSampRate
         self.zerosOut = zerosOut
@@ -150,25 +150,25 @@ class GenRndBits:
         self.sampOut = 0
 
     def reset(self):
-        '''
+        """
         Description:    Resets upsample counter
 
         Params:         None
 
         Returns:        None
-        '''
+        """
         self.upSampCnt = self.upSampRate-1
         return
 
     def getSamp(self):
-        '''
+        """
         Description:    Gets next sample (new bit or hold previous value during
                             upsampling)
 
         Params:         None
 
         Returns:        newSamp:    Single bit value 
-        '''
+        """
         if (self.upSampCnt == self.upSampRate-1):
             self.upSampCnt = 0
             self.sampOut = np.random.randint(0,2)
@@ -179,13 +179,13 @@ class GenRndBits:
         return self.sampOut
 
     def getArr(self,numBits):
-        '''
+        """
         Description:    Gets array of upsampled random bits
 
         Params:         numBits:    # of bits to return
 
         Returns:        dataOut:    Upsampled array of bits
-        '''
+        """
         dataOut = np.random.randint(0,2,numBits)
         if (self.zerosOut == False):
             dataOut = dataOut*2-1
@@ -193,7 +193,7 @@ class GenRndBits:
 
 
 class GenPn():
-    ''' 
+    """
     Designer:       Andrew Carroll
 
     Description:    Generates maximal length PN pattern
@@ -208,7 +208,7 @@ class GenPn():
     Methods:        reset():            Reset pattern and upsampling
                     getSamp():          Get next sample
                     getArr(numPn):      Get array of upsampled bits
-    '''
+    """
     # Dictionary of feedback taps for specific PN patterns
     __TAPS = {23:np.array([23,18,1]),
               15:np.array([15,14,1]),
@@ -228,13 +228,13 @@ class GenPn():
         self.pnOut = self.__shiftReg[pow2-1]
 
     def reset(self):
-        '''
+        """
         Description:    Resets pattern and upsample counter
 
         Params:         None
 
         Returns:        None
-        '''
+        """
         self.upSampCnt = 0
         self.__shiftReg = np.ones(self.pow2)
         self.pnOut = self.__shiftReg[self.pow2-1]
@@ -249,14 +249,14 @@ class GenPn():
         return pnSeq
 
     def getSamp(self):
-        '''
+        """
         Description:    Gets next sample (new bit or hold previous value during
                             upsampling)
 
         Params:         None
 
         Returns:        newSamp:    Single bit value 
-        '''
+        """
         if (self.upSampCnt == self.upSampRate-1):
             self.upSampCnt = 0
             fB = self.__shiftReg*self.__fBSel
@@ -270,13 +270,13 @@ class GenPn():
         return self.pnOut
 
     def getArr(self,numPn):
-        '''
+        """
         Description:    Gets array of upsampled bits
 
         Params:         numBits:    # of bits to return
 
         Returns:        dataOut:    Upsampled array of bits
-        '''
+        """
         pnArr = np.zeros(numPn)
         if (numPn > 2**self.pow2-1):
             pnSeq = self.__getSeq()
@@ -292,14 +292,14 @@ class GenPn():
         self.upSampCnt = 0
         return np.repeat(pnArr,self.upSampRate)
 
-'''
+"""
 # EXAMPLE:
 test = GenPn(9,3)
 x = np.zeros(200)
 for ii in range(0,x.size):
     x[ii] = test.getSamp()
 print(x)
-'''
+"""
     
 
 

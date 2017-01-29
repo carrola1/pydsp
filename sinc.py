@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class Sinc:
-    ''' 
+    """
     Designer:       Andrew Carroll
 
     Description:    Calculate and optionally plot sin(x)/x for given data rate
@@ -12,7 +12,7 @@ class Sinc:
                               ('GHz','MHz','kHz','Hz')
     Methods:        plot():   Calculates sinc function and generates plot
                     calc():   Calculates sinc function  
-    '''
+    """
     __W = np.arange(np.pi/200,25*np.pi+np.pi/200,np.pi/200)
     __SIN_X = np.sin(__W) / __W
 
@@ -39,14 +39,14 @@ class Sinc:
         return freq,sinc
 
     def plot(self):
-        '''
+        """
         Description:    Calculates and plots sinc function
 
         Params:         None
 
         Returns:        freq: frequency array in 'units'
                         sinc: sinc calculation (dB) 
-        '''
+        """
         freq,sinc = self.__crunch()
         plt.plot(freq,sinc)
         plt.xlabel(('Freq (' + self.units + ')'))
@@ -56,19 +56,19 @@ class Sinc:
         return freq,sinc
 
     def calc(self):
-        '''
+        """
         Description:    Calculates sinc function
 
         Params:         None
 
         Returns:        freq: frequency array in 'units'
                         sinc: sinc calculation (dB) 
-        '''
+        """
         freq,sinc = self.__crunch()
         return freq,sinc
 
-'''
+"""
 # EXAMPLE:
 test = Sinc(100,'kHz')
 test.plot()
-'''
+"""

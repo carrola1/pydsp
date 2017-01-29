@@ -1,7 +1,7 @@
 import numpy as np
 
 class AWGN():
-    ''' 
+    """
     Designer:       Andrew Carroll
 
     Description:    Additive white gaussian noise generator
@@ -11,34 +11,34 @@ class AWGN():
                     
     Methods:        addNoise(dataIn):       Add noise to input data
                     getNoise(numSamps):     Get noise samples
-    '''
+    """
     def __init__(self,rmsSig,snr):
         self.sigmaN = rmsSig/10**(snr/20)
 
     def addNoise(self,dataIn):
-        '''
+        """
         Description:    Add noise to input sample or array
 
         Params:         dataIn:     Input sample (float)
 
         Returns:        dataOut:    Output sample(s) with noise added (float)
-        '''
+        """
         dataOut = dataIn + np.random.normal(0,self.sigmaN,dataIn.size)
         return dataOut
 
     def getNoise(self,numSamps):
-        '''
+        """
         Description:    Get noise samples from gaussian distribution
 
         Params:         numSamps:   # of noise samples to return
 
         Returns:        sampsOut:   Output sample or array
-        '''
+        """
         sampsOut = np.random.normal(0,self.sigmaN,numSamps)
         return sampsOut
 
 class EbNo(AWGN):
-    ''' 
+    """
     Designer:       Andrew Carroll
 
     Description:    Additive white noise generator targetting Eb/No
@@ -51,12 +51,12 @@ class EbNo(AWGN):
                     
     Methods:        addNoise(dataIn):       Add noise to input data
                     getNoise(numSamps):     Get noise samples
-    '''
+    """
     def __init__(self,fData,fSamp,ebNo,rmsSig=.70710678):
         snr = ebNo - 10*np.log10(fSamp/fData)
         super(EbNo, self).__init__(rmsSig,snr)
 
-'''
+"""
 # EXAMPLE (AWGN):
 import matplotlib.pyplot as plt
 from fft import Fft
@@ -73,4 +73,4 @@ freqUnit = freq[1]-freq[0]
 snr = np.max(amp) - np.mean(amp[int(freq.size/2):]) - 10*np.log10(5000/freqUnit)
 print(snr)
 plt.show()
-'''
+"""

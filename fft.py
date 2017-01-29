@@ -75,8 +75,8 @@ class Fft:
 
         for ii in range(0,int(2**np.floor(np.log2(self.numAvg)))):
             dataWin = data[ii*nfft:(ii+1)*nfft]*window
-            Y       = np.abs(np.fft.fft(dataWin,nfft))/nfft
-            ySum    = ySum + Y**2;
+            Y = np.abs(np.fft.fft(dataWin,nfft))/nfft
+            ySum += Y**2;
         yAvg = ySum/2**np.floor(np.log2(self.numAvg));
 
         freq = self.fs/2*np.linspace(0,1,nfft/2)/self.__range
@@ -84,14 +84,14 @@ class Fft:
         return freq,resp
 
     def plot(self,data):
-        '''
+        """
         Description:    Calculates and plots fft of input data set in dB.
     
         Params:         data: input data array
         
         Returns:        freq: frequency array in 'units'
                         resp: FFT calculation (dB) 
-        '''
+        """
         freq,resp = self.__crunch(data)
         plt.figure()
         plt.plot(freq,resp)
@@ -102,18 +102,18 @@ class Fft:
         return freq,resp
 
     def calc(self,data):
-        '''
+        """
         Description:    Calculates and returns fft of input data set in dB.
     
         Params:         data: input data array
         
         Returns:        freq: frequency array in 'units'
                         resp: FFT calculation (dB) 
-        '''
+        """
         freq,resp = self.__crunch(data)
         return freq,resp    
 
-'''
+"""
 # EXAMPLE:
 f = 1000
 t = np.arange(0,1/f*10,1/f/100)
@@ -123,4 +123,4 @@ plt.plot(t,data)
 plt.draw()
 test = Fft(100e3,'kHz',2)
 freq,dataOut = test.plot(data)
-'''
+"""

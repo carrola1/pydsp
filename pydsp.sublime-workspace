@@ -122,20 +122,13 @@
 			}
 		},
 		{
-			"file": "pictrl.py",
-			"settings":
-			{
-				"buffer_size": 1239,
-				"encoding": "UTF-8",
-				"line_ending": "Windows",
-				"name": "import numpy as np"
-			}
-		},
-		{
+			"contents": "import numpy as np\nimport matplotlib.pyplot as plt\nimport scipy.signal as signal\nimport bitgen\nimport noisegen\nimport agc\nimport qtrratedwncvt\nimport fir\nimport intdump\n\n# Parameters\nF_SAMP = 10e6\nF_BIT = 100e3\nF_CAR = 2.5e6\nNUM_BITS = 500\nNUM_SAMPS = int(F_SAMP/F_BIT*NUM_BITS)\nEB_NO = 8\nBIT_W = 10\nFULL_SCALE = 2**(BIT_W-1)-1\nBIT_GAIN = 4\nPH_OFFSET = np.pi/2\nSAMP_DLY = 8\n\n# FIR Design\ntaps = signal.firwin(100, cutoff = 0.018, window = \"hamming\")\n\n# Create DSP objects\nbitGen = bitgen.GenPn(9,F_SAMP/F_BIT)\nnoiseGen = noisegen.EbNo(F_BIT,F_SAMP,EB_NO)\nagc = agc.AGC(100,FULL_SCALE,3)\nqtrRate = qtrratedwncvt.QtrRateDwnCvt()\nfirFiltI = fir.FIR(taps)\nfirFiltQ = fir.FIR(taps)\nintDumpI = intdump.IntDump(10)\nintDumpQ = intdump.IntDump(10)\n\n# Test Sigs\ntArr = np.zeros(NUM_SAMPS)\ntSigI = np.zeros(NUM_SAMPS)\ntSigQ = np.zeros(NUM_SAMPS)\n\nbitRec = np.array([])\ntp = np.array([])\nsampDly = 0\nsampCnt = 9\nfor ii in range(0,NUM_SAMPS):\n    t = ii*1/F_SAMP\n    tArr[ii] = t\n\n    # Create input signal\n    sigIn = np.sin(2*np.pi*F_CAR*t+PH_OFFSET)\n    sigIn = sigIn*bitGen.getSamp() + noiseGen.getNoise(1)\n    sigIn = agc.update(sigIn)\n    sigIn = int(np.clip(sigIn,-FULL_SCALE,FULL_SCALE))\n\n    # Receiver\n    iSig,qSig = qtrRate.update(sigIn)\n    iSig = firFiltI.update(iSig)\n    qSig = firFiltQ.update(qSig)\n    iSig = int(np.clip(iSig*BIT_GAIN,-FULL_SCALE,FULL_SCALE))\n    qSig = int(np.clip(qSig*BIT_GAIN,-FULL_SCALE,FULL_SCALE))\n    tSigI[ii] = iSig\n    tSigQ[ii] = qSig\n    iSig, iSigVal = intDumpI.update(iSig)\n    qSig, qSigVal = intDumpQ.update(qSig)\n    if (iSigVal == 1):\n        if (sampDly == SAMP_DLY): \n            tp = np.append(tp,iSig)\n            if (sampCnt == 9):\n                bitRec = np.append(bitRec,np.sign(iSig))\n                sampCnt = 0\n            else:\n                sampCnt += 1\n        else:\n            sampDly += 1\n    \n'''    \nplt.figure()\nplt.plot(tArr[0:int(F_SAMP/F_BIT*20)],tSigI[0:int(F_SAMP/F_BIT*20)],'b',\n            tArr[0:int(F_SAMP/F_BIT*20)],tSigQ[0:int(F_SAMP/F_BIT*20)],'r')\nplt.show()\n'''\nbitGen.upSampRate = 1\nbitGen.reset()\nbitSent = bitGen.getArr(NUM_BITS)\nnumErr = np.sum(np.abs((bitSent[1:-1]*bitRec[2:] - 1)/2))\nprint(numErr)\n#plt.figure()\n#plt.plot(np.arange(0,tp.size),tp)\n#plt.show()",
 			"file": "bpsksim.py",
+			"file_size": 2390,
+			"file_write_time": 131301030979122861,
 			"settings":
 			{
-				"buffer_size": 2243,
+				"buffer_size": 2242,
 				"encoding": "UTF-8",
 				"line_ending": "Windows",
 				"name": "import numpy as np"
@@ -195,9 +188,13 @@
 	"command_palette":
 	{
 		"height": 354.0,
-		"last_filter": "packagere",
+		"last_filter": "packa",
 		"selected_items":
 		[
+			[
+				"packa",
+				"Package Control: Install Package"
+			],
 			[
 				"packagere",
 				"PackageResourceViewer: Open Resource"
@@ -252,6 +249,8 @@
 	],
 	"file_history":
 	[
+		"/C/Users/acarro12/AppData/Roaming/Sublime Text 3/Packages/SublimeREPL/SublimeREPL.sublime-settings",
+		"/C/GitHub/pydsp/pictrl.py",
 		"/F/Arigato EB2 v1.0.xml",
 		"/C/Users/acarro12/AppData/Local/Microsoft/Windows/Temporary Internet Files/Content.Outlook/0GU03UZ4/Buccaneer 45 cm D41290A 08-31-16 No Hemo No ATT.xml",
 		"/C/Users/acarro12/Desktop/Buccaneer 45 cm D41290A 08-31-16 No Hemo No ATT.xml",
@@ -377,9 +376,7 @@
 		"/C/Users/acarro12/AppData/Local/Arduino15/packages/arduino/hardware/avr/1.6.14/libraries/Wire/src/utility/twi.h",
 		"/C/Program Files (x86)/Arduino/hardware/arduino/avr/libraries/Wire/src/Wire.cpp",
 		"/C/Program Files (x86)/Arduino/hardware/arduino/avr/libraries/Wire/src/Wire.h",
-		"/C/Program Files (x86)/Arduino/hardware/tools/avr/avr/include/compat/twi.h",
-		"/C/Program Files (x86)/Arduino/hardware/tools/avr/avr/include/util/twi.h",
-		"/C/Subversion/CHAP/FPGA Test Set/LabVIEW/RawSerial/20161118_152704_ADC Use Case Startup Script.txt"
+		"/C/Program Files (x86)/Arduino/hardware/tools/avr/avr/include/compat/twi.h"
 	],
 	"find":
 	{
@@ -387,7 +384,7 @@
 	},
 	"find_in_files":
 	{
-		"height": 0.0,
+		"height": 158.0,
 		"where_history":
 		[
 		]
@@ -570,7 +567,7 @@
 	"groups":
 	[
 		{
-			"selected": 10,
+			"selected": 9,
 			"sheets":
 			[
 				{
@@ -645,7 +642,7 @@
 						"translation.y": 30.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
@@ -686,7 +683,7 @@
 						"translation.y": 135.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 11,
+					"stack_index": 10,
 					"type": "text"
 				},
 				{
@@ -757,7 +754,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 10,
+					"stack_index": 9,
 					"type": "text"
 				},
 				{
@@ -909,7 +906,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 9,
+					"stack_index": 8,
 					"type": "text"
 				},
 				{
@@ -950,66 +947,24 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 8,
-					"type": "text"
-				},
-				{
-					"buffer": 9,
-					"file": "pictrl.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1239,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								749,
-								749
-							]
-						],
-						"settings":
-						{
-							"auto_complete_triggers":
-							[
-								{
-									"characters": ".",
-									"selector": "source.python - string - comment - constant.numeric"
-								},
-								{
-									"characters": ".",
-									"selector": "source.python - string - constant.numeric"
-								}
-							],
-							"auto_name": "import numpy as np",
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
 					"stack_index": 7,
 					"type": "text"
 				},
 				{
-					"buffer": 10,
+					"buffer": 9,
 					"file": "bpsksim.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 2243,
+						"buffer_size": 2242,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								677,
-								677
+								738,
+								738
 							]
 						],
 						"settings":
@@ -1035,14 +990,14 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 616.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
 					"type": "text"
 				},
 				{
-					"buffer": 11,
+					"buffer": 10,
 					"file": "test.py",
 					"semi_transient": false,
 					"settings":
@@ -1054,8 +1009,8 @@
 						"selection":
 						[
 							[
-								116,
-								116
+								120,
+								120
 							]
 						],
 						"settings":
@@ -1081,9 +1036,14 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 1,
 					"type": "text"
 				}
+			]
+		},
+		{
+			"sheets":
+			[
 			]
 		}
 	],
@@ -1104,6 +1064,12 @@
 				0,
 				1,
 				1
+			],
+			[
+				0,
+				1,
+				1,
+				2
 			]
 		],
 		"cols":
@@ -1114,6 +1080,7 @@
 		"rows":
 		[
 			0.0,
+			0.832477535302,
 			1.0
 		]
 	},
@@ -1130,7 +1097,7 @@
 	{
 		"height": 98.0
 	},
-	"pinned_build_system": "",
+	"pinned_build_system": "Anaconda Python Builder",
 	"project": "pydsp.sublime-project",
 	"replace":
 	{

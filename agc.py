@@ -1,7 +1,7 @@
 import numpy as np
 
 class AGC:
-    ''' 
+    """
     Designer:       Andrew Carroll
 
     Description:    Implements Automatic Gain Control algorithm. Calculates
@@ -17,7 +17,7 @@ class AGC:
     Methods:        update(samp):   Update AGC object with new sample
                     clear():        Clear buffer and gain
                     calc(data):     Apply AGC to data array
-    '''
+    """
 
     def __init__(self,bufLength,fullScale,numSigma=2):
         self.numSigma = numSigma
@@ -27,13 +27,13 @@ class AGC:
         self.gain = 1
 
     def update(self,samp):
-        '''
+        """
         Description:    Update AGC object with new sample
     
         Params:         samp:       New data sample
         
         Returns:        sampOut:    Output sample with gain applied
-        '''
+        """
         self.buf = np.roll(self.buf,1)
         self.buf[0] = samp
         if (self.bufCnt == self.buf.size-1):
@@ -45,25 +45,25 @@ class AGC:
         return sampOut
 
     def clear(self):
-        '''
+        """
         Description:    Clear AGC buffer and gain
     
         Params:         None
         
         Returns:        None
-        '''
+        """
         self.bufCnt = 0
         self.buf = np.zeros(self.buf.size)
         self.gain = 1
 
     def calc(self,data):
-        '''
+        """
         Description:    Apply AGC to data array
     
         Params:         data:       Input data array
         
         Returns:        dataOut:    Output data with gain applied
-        '''
+        """
         dataOut = np.zeros(data.size)
         self.clear()
         for ii in range(0,data.size):
@@ -78,7 +78,7 @@ class AGC:
                             self.fullScale)
         return dataOut
 
-'''
+"""
 # EXAMPLE:
 import matplotlib.pyplot as plt
 from noisegen import AWGN
@@ -98,4 +98,4 @@ print(cnt/dataZ.size*100)
 plt.figure()
 plt.plot(t[0:500],dataN[0:500],'r',t[0:500],dataZ[0:500],'b')
 plt.show()
-'''
+"""
