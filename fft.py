@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class Fft:
-    ''' 
+    """
     Designer:       Andrew Carroll
 
     Description:    Calculates and optionally plots fft of input data set in dB.  
@@ -21,7 +21,7 @@ class Fft:
     
     Methods:        plot(data): Calculates FFT and generates plot
                     calc(data): Calculates FFT  
-    '''
+    """
     def __init__(self,fsHz,plotUnits,numAvg=1,window='hanning'):
         self.fs = fsHz
         self.units = plotUnits
@@ -45,13 +45,13 @@ class Fft:
         
 
     def setWindow(self,window):
-        '''
+        """
         Description:    Set window function.
     
         Params:         window: Windowing function. Supports 'hanning or 'none'
         
         Returns:        None 
-        '''
+        """
         if ((window.units.lower() == 'hanning') |
                 (window.units.lower() == 'hann')):
             self.__window = 'hann'
