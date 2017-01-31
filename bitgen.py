@@ -245,7 +245,9 @@ class GenPn():
             pnSeq[ii] = self.__shiftReg[self.pow2-1]
             fB = self.__shiftReg*self.__fBSel
             fBXOR = sum(fB) % 2
-            self.__shiftReg = np.append(fBXOR,self.__shiftReg[0:-1])            
+            self.__shiftReg = np.append(fBXOR,self.__shiftReg[0:-1])
+        if (self.zerosOut == False):
+            pnSeq = pnSeq*2-1
         return pnSeq
 
     def getSamp(self):
@@ -280,11 +282,10 @@ class GenPn():
         pnArr = np.zeros(numPn)
         if (numPn > 2**self.pow2-1):
             pnSeq = self.__getSeq()
-            for ii in range(0,int(np.floor(numPn/pnSeq.size))):
+            numSeq = int(np.floor(numPn/pnSeq.size))
+            for ii in range(0,numSeq):
                 pnArr[ii*pnSeq.size:ii*pnSeq.size+pnSeq.size] = pnSeq
-            for jj in range(numPn-int(np.floor(numPn/pnSeq.size))*pnSeq.size):
-                self.upSampCnt = self.upSampRate-1
-                pnArr[jj] = self.getSamp()
+            pnArr[numSeq*pnSeq.size:] = pnSeq[0:pnArr.size-numSeq*pnSeq.size]
         else:
             for ii, elem in enumerate(pnArr):
                 self.upSampCnt = self.upSampRate-1

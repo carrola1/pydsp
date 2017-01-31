@@ -13,7 +13,9 @@ class AWGN():
                     getNoise(numSamps):     Get noise samples
     """
     def __init__(self,rmsSig,snr):
-        self.sigmaN = rmsSig/10**(snr/20)
+        # I don't fully understand why the +3dB is required. I believe it has
+            # something to do with being a digital single-sided frequency spectrum
+        self.sigmaN = rmsSig/10**((snr+3)/20)
 
     def addNoise(self,dataIn):
         """
@@ -70,7 +72,7 @@ plt.plot(t[0:500],sig[0:500],'r',t[0:500],sigN[0:500],'b')
 tFft = Fft(10000,'Hz',8,'none')
 freq,amp = tFft.plot(sigN)
 freqUnit = freq[1]-freq[0]
-snr = np.max(amp) - np.mean(amp[int(freq.size/2):]) - 10*np.log10(5000/freqUnit)
+snr = np.max(amp) - np.mean(amp[int(freq.size/2):]) - 10*np.log10(10000/freqUnit)
 print(snr)
 plt.show()
 """
