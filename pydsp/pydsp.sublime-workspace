@@ -1,0 +1,1151 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"zero",
+				"zerosOut"
+			],
+			[
+				"length",
+				"length\tstatement"
+			],
+			[
+				"butPB",
+				"butPB\tstatement"
+			],
+			[
+				"file",
+				"filedialog\tmodule"
+			],
+			[
+				"zip",
+				"zip"
+			],
+			[
+				"list",
+				"lists"
+			],
+			[
+				"askop",
+				"askopenfilename\tfunction"
+			],
+			[
+				"end",
+				"end"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "fft.py",
+			"settings":
+			{
+				"buffer_size": 4022,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "intdump.py",
+			"settings":
+			{
+				"buffer_size": 2613,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "fir.py",
+			"settings":
+			{
+				"buffer_size": 2033,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "agc.py",
+			"settings":
+			{
+				"buffer_size": 3180,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "movavg.py",
+			"settings":
+			{
+				"buffer_size": 1998,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "bitgen.py",
+			"settings":
+			{
+				"buffer_size": 9763,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "noisegen.py",
+			"settings":
+			{
+				"buffer_size": 2368,
+				"encoding": "UTF-8",
+				"line_ending": "Windows",
+				"name": "import numpy as np"
+			}
+		},
+		{
+			"file": "misc.py",
+			"settings":
+			{
+				"buffer_size": 2096,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "qtrratedwncvt.py",
+			"settings":
+			{
+				"buffer_size": 1593,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"contents": "import numpy as np\nimport matplotlib.pyplot as plt\nimport scipy.signal as signal\nimport bitgen\nimport noisegen\nimport agc\nimport qtrratedwncvt\nimport fir\nimport intdump\n\n# Parameters\nF_SAMP = 10e6\nF_BIT = 100e3\nF_CAR = 2.5e6\nNUM_BITS = 500\nNUM_SAMPS = int(F_SAMP/F_BIT*NUM_BITS)\nEB_NO = 8\nBIT_W = 10\nFULL_SCALE = 2**(BIT_W-1)-1\nBIT_GAIN = 4\nPH_OFFSET = np.pi/2\nSAMP_DLY = 8\n\n# FIR Design\ntaps = signal.firwin(100, cutoff = 0.018, window = \"hamming\")\n\n# Create DSP objects\nbitGen = bitgen.GenPn(9,F_SAMP/F_BIT)\nnoiseGen = noisegen.EbNo(F_BIT,F_SAMP,EB_NO)\nagc = agc.AGC(100,FULL_SCALE,3)\nqtrRate = qtrratedwncvt.QtrRateDwnCvt()\nfirFiltI = fir.FIR(taps)\nfirFiltQ = fir.FIR(taps)\nintDumpI = intdump.IntDump(10)\nintDumpQ = intdump.IntDump(10)\n\n# Test Sigs\ntArr = np.zeros(NUM_SAMPS)\ntSigI = np.zeros(NUM_SAMPS)\ntSigQ = np.zeros(NUM_SAMPS)\n\nbitRec = np.array([])\ntp = np.array([])\nsampDly = 0\nsampCnt = 9\nfor ii in range(0,NUM_SAMPS):\n    t = ii*1/F_SAMP\n    tArr[ii] = t\n\n    # Create input signal\n    sigIn = np.sin(2*np.pi*F_CAR*t+PH_OFFSET)\n    sigIn = sigIn*bitGen.getSamp() + noiseGen.getNoise(1)\n    sigIn = agc.update(sigIn)\n    sigIn = int(np.clip(sigIn,-FULL_SCALE,FULL_SCALE))\n\n    # Receiver\n    iSig,qSig = qtrRate.update(sigIn)\n    iSig = firFiltI.update(iSig)\n    qSig = firFiltQ.update(qSig)\n    iSig = int(np.clip(iSig*BIT_GAIN,-FULL_SCALE,FULL_SCALE))\n    qSig = int(np.clip(qSig*BIT_GAIN,-FULL_SCALE,FULL_SCALE))\n    tSigI[ii] = iSig\n    tSigQ[ii] = qSig\n    iSig, iSigVal = intDumpI.update(iSig)\n    qSig, qSigVal = intDumpQ.update(qSig)\n    if (iSigVal == 1):\n        if (sampDly == SAMP_DLY): \n            tp = np.append(tp,iSig)\n            if (sampCnt == 9):\n                bitRec = np.append(bitRec,np.sign(iSig))\n                sampCnt = 0\n            else:\n                sampCnt += 1\n        else:\n            sampDly += 1\n    \n'''    \nplt.figure()\nplt.plot(tArr[0:int(F_SAMP/F_BIT*20)],tSigI[0:int(F_SAMP/F_BIT*20)],'b',\n            tArr[0:int(F_SAMP/F_BIT*20)],tSigQ[0:int(F_SAMP/F_BIT*20)],'r')\nplt.show()\n'''\nbitGen.upSampRate = 1\nbitGen.reset()\nbitSent = bitGen.getArr(NUM_BITS)\nnumErr = np.sum(np.abs((bitSent[1:-1]*bitRec[2:] - 1)/2))\nprint(numErr)\n#plt.figure()\n#plt.plot(np.arange(0,tp.size),tp)\n#plt.show()",
+			"file": "bpsksim.py",
+			"file_size": 2390,
+			"file_write_time": 131301030979122861,
+			"settings":
+			{
+				"buffer_size": 2242,
+				"encoding": "UTF-8",
+				"line_ending": "Windows",
+				"name": "import numpy as np"
+			}
+		},
+		{
+			"file": "test.py",
+			"settings":
+			{
+				"buffer_size": 120,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		}
+	],
+	"build_system": "Anaconda Python Builder",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Anaconda Python Builder",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					"Syntax Check"
+				]
+			],
+			[
+				"Anaconda Python Builder",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/Python/Python.sublime-build",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					"Syntax Check"
+				]
+			],
+			[
+				"Packages/Python/Python.sublime-build",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 354.0,
+		"last_filter": "packa",
+		"selected_items":
+		[
+			[
+				"packa",
+				"Package Control: Install Package"
+			],
+			[
+				"packagere",
+				"PackageResourceViewer: Open Resource"
+			],
+			[
+				"package",
+				"Package Control: Install Package"
+			],
+			[
+				"material theme ",
+				"Material Theme: Extras"
+			],
+			[
+				"material",
+				"Material Theme: Activate theme"
+			],
+			[
+				"file",
+				"FileDiffs: Menu"
+			],
+			[
+				"remove",
+				"Package Control: Remove Package"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 382.0
+	},
+	"console":
+	{
+		"height": 126.0,
+		"history":
+		[
+			"import urllib.request,os,hashlib; h = 'df21e130d211cfc94d9b0905775a7c0f' + '1e3d39e33b79698005270310898eea76'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/C/GitHub/pydsp"
+	],
+	"file_history":
+	[
+		"/C/Users/acarro12/AppData/Roaming/Sublime Text 3/Packages/SublimeREPL/SublimeREPL.sublime-settings",
+		"/C/GitHub/pydsp/pictrl.py",
+		"/F/Arigato EB2 v1.0.xml",
+		"/C/Users/acarro12/AppData/Local/Microsoft/Windows/Temporary Internet Files/Content.Outlook/0GU03UZ4/Buccaneer 45 cm D41290A 08-31-16 No Hemo No ATT.xml",
+		"/C/Users/acarro12/Desktop/Buccaneer 45 cm D41290A 08-31-16 No Hemo No ATT.xml",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/setup.py",
+		"/C/Subversion/CHAP/FPGA Test Set/LabVIEW/ASIC Settings.ini",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Demos/Ethicon Demo Board/TC_temp_display.txt",
+		"/C/Subversion/Arigato Hall Effect/Scripts/setup.py",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Demos/Ethicon Demo Board/Accelerometer_Widgets.txt",
+		"/C/Subversion/Arigato Hall Effect/Scripts/GetFactoryData.py",
+		"/C/Subversion/Arigato Hall Effect/LabVIEW/RawSerial/20170124_170213_Script_HallEffect_InitSetup.txt",
+		"/C/Subversion/Arigato Hall Effect/Scripts/Script_HallEffect_Config.txt",
+		"/C/Subversion/Arigato Hall Effect/LabVIEW/RawSerial/20170123_155558_Script_HallEffect_InitSetup.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Demos/Ethicon Demo Board/ADC_Widgets.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/LabVIEW/RawSerial/20170123_120223_Script_HallEffect_Config.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/LabVIEW/RawSerial/20170123_114043_Script_HallEffect_Config.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/LabVIEW/RawSerial/20170123_115231_Script_HallEffect_Config.txt",
+		"/C/GitHub/pydsp/filter.py",
+		"/C/GitHub/pydsp/sinc.py",
+		"/C/Users/acarro12/AppData/Roaming/Sublime Text 3/Packages/User/Anaconda.sublime-settings",
+		"/C/Users/acarro12/AppData/Roaming/Sublime Text 3/Packages/Anaconda/Anaconda.sublime-settings",
+		"/C/Subversion/Arigato Hall Effect/TLV493D.ini",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Demos/Ethicon Demo Board/Accelerometer_Config.txt",
+		"/C/Users/acarro12/Downloads/Accelerometer Example (1).ini",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Demos/Ethicon Demo Board/ADC Use Case Run Script.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/LabVIEW/ASIC Serial.ini",
+		"/C/Subversion/CHAP/FPGA Test Set/LabVIEW/user.lib/errors/ASIC-errors.txt",
+		"/C/Users/acarro12/AppData/Roaming/Sublime Text 3/Packages/Material Theme/schemes/Material-Theme-Darker.tmTheme",
+		"/C/Users/acarro12/AppData/Roaming/Sublime Text 3/Packages/Material Theme/Material-Theme-Darker.sublime-theme",
+		"/C/Users/acarro12/AppData/Roaming/Sublime Text 3/Packages/Default/exec.py",
+		"/C/GitHub/pydsp/mymovavg.py",
+		"/C/GitHub/pydsp/myintdump.py",
+		"/C/GitHub/pydsp/mysinc.py",
+		"/C/GitHub/pydsp/myfft.py",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/SerPortErrTest_Config.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/SerPortErrTest_Run.txt",
+		"/C/Users/acarro12/AppData/Local/Microsoft/Windows/Temporary Internet Files/Content.Outlook/0GU03UZ4/signalprocessing.py",
+		"/C/Python/mysinc.py",
+		"/C/Python/myfft.py",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/genscript.py",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/ASIC_GUI.py",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/checkscriptresults.py",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Script_15_Widgets.txt",
+		"/C/Subversion/Arigato Hall Effect/Script_HallEffect_Widgets.txt",
+		"/C/Subversion/Arigato Hall Effect/README.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/test.py",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/testsetup.py",
+		"/C/Users/acarro12/AppData/Local/Continuum/Anaconda3/Scripts/setup.py",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/ASIC_GUI.pyw",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/genscript.pyw",
+		"/C/Users/acarro12/Desktop/Script_00_RegMapTest.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/GenScript.py",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/CheckScriptResults.py",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/CheckScriptResults_GUI.pyw",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/CheckLatestScriptResults.py",
+		"/C/Users/acarro12/Desktop/Load Waveforms.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/ASIC Python Scripts.sublime-project",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/CheckLatestScriptResults.pyw",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/GenScript.pyw",
+		"/C/Users/acarro12/Desktop/test.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/LabVIEW/RawSerial/20161129_133229_Script_00_RegMapTest.txt",
+		"/C/Users/acarro12/Desktop/test.py",
+		"/C/Users/acarro12/Desktop/test2.py",
+		"/C/Subversion/CHAP/FPGA Test Set/LabVIEW/RawSerial/20161129_122723_Script_00_RegMapTest.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/LabVIEW/RawSerial/20161220_091343_Accelerometer_Run.txt",
+		"/C/Users/acarro12/Desktop/GenScript_Bkup.py",
+		"/C/Users/acarro12/Desktop/GenScript_Bkup2.py",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Script_00_RegMapTest.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Python Scripts/build/GenScript/warnGenScript.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Demos/Ethicon Demo Board/GenScript.py",
+		"/E/1111512004.xml",
+		"/C/Users/acarro12/Desktop/WRAPPER_EXAM_III_tb.v",
+		"/C/Users/acarro12/Desktop/WRAPPER_EXAM_III.v",
+		"/C/Users/acarro12/Desktop/WRAPPER_EXAM_III (1).v",
+		"/C/Subversion/CHAP/FPGA Test Set/HDL/QGen/Sim/QGen_tb.v",
+		"/C/Users/acarro12/Desktop/test.v",
+		"/C/Subversion/Arigato Hall Effect/GenScript.py",
+		"/C/Subversion/Arigato Hall Effect/Script_HallEffect_Config.txt",
+		"/C/Users/acarro12/Downloads/WRAPPER_EXAM_III.v",
+		"//eesuscifps01.na.jnj.com/homeh$/acarro12/Arigato/Position Sensing/GenScript.py",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/GenScript.py",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Script_00_RegMapTest_Cmp.txt",
+		"/C/Users/acarro12/Desktop/MatlabGenScript.py",
+		"/C/Users/acarro12/AppData/Local/Microsoft/Windows/Temporary Internet Files/Content.Outlook/0GU03UZ4/y.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/HDL/EepromSim/Code/EepromSim.v",
+		"/C/Subversion/CHAP/FPGA Test Set/HDL/QGen/Code/QGen.v",
+		"/C/Subversion/CHAP/FPGA Test Set/HDL/Testset_TopLevel_GEN11/Code/TestSet_TopLevel_GEN11_SP_UseCase.v",
+		"/C/Subversion/CHAP/FPGA Test Set/HDL/Testset_TopLevel_ASIC_Ctrl/Code/TestSet_TopLevel_ASIC_Ctrl.v",
+		"/C/Users/acarro12/AppData/Local/Microsoft/Windows/Temporary Internet Files/Content.Outlook/0GU03UZ4/x.txt",
+		"/C/Users/acarro12/Desktop/Arigato_EB2_PartPositions.txt",
+		"/C/Users/acarro12/Desktop/KiCAD StepUp/demo/kicadStepUpMod/README.txt",
+		"/C/Users/acarro12/Desktop/KiCAD StepUp/demo/README.txt",
+		"/C/Users/acarro12/Desktop/SOT23",
+		"/C/Users/acarro12/Desktop/SOD_323.stp",
+		"/C/Program Files/KiCad/share/kicad/modules/Connectors_TE-Connectivity.pretty/README.md",
+		"/C/KiCAD/myLib/Pad.lib",
+		"/C/Subversion/CHAP/FPGA Test Set/Test/Scripts/Script_15_Demo_Sensors_Config.txt",
+		"/C/Program Files/KiCad/share/kicad/library/sensors.lib",
+		"/C/Program Files/KiCad/share/kicad/library/sensors.dcm",
+		"/C/Subversion/CHAP/TS3830/DigCore/Code/TP102A_001A_DIG_CORE.v",
+		"/C/Subversion/CHAP/TS3830/MemoryMap/Code/memory_map.v",
+		"/C/Subversion/CHAP/FPGA Test Set/HDL/Testset_TopLevel_ASIC_Ctrl/Code/TestSet_TopLevel_ASIC_CtrlWrapper.v",
+		"/C/Subversion/CHAP/FPGA Test Set/LabVIEW/RawSerial/20161128_162638_Script_00_RegMapTest.txt",
+		"/C/Subversion/CHAP/FPGA Test Set/LabVIEW/RawSerial/20161128_154848_Script_00_RegMapTest.txt",
+		"/C/Subversion/CHAP/TS3830/AddrTrans/Code/addr_trans.v",
+		"/C/Subversion/CHAP/FPGA Test Set/HDL/Testset_TopLevel/Code/TestSet_TopLevel.v",
+		"/C/GitHub/Blynk_Security_ESP8266/alarm.h",
+		"/C/Users/acarro12/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/Wire/Wire.h",
+		"/C/Users/acarro12/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/2.3.0/libraries/Wire/Wire.cpp",
+		"/C/Users/acarro12/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/2.3.0/cores/esp8266/twi.h",
+		"/C/Users/acarro12/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/2.3.0/cores/esp8266/core_esp8266_si2c.c",
+		"/C/GitHub/Blynk_Security_ESP8266/Blynk_Security_ESP8266.ino",
+		"//eesuscifps01.na.jnj.com/homeh$/acarro12/Arduino/libraries/Adafruit_MCP4725/examples/sinewave/sinewave.ino",
+		"//eesuscifps01.na.jnj.com/homeh$/acarro12/Arduino/libraries/Adafruit_MCP4725/Adafruit_MCP4725.cpp",
+		"//eesuscifps01.na.jnj.com/homeh$/acarro12/Arduino/libraries/Adafruit_MCP4725/Adafruit_MCP4725.h",
+		"/C/GitHub/PulseSensor/PulseSensor/PulseSensor/max30102.cpp",
+		"/C/GitHub/PulseSensor/mbed Test/main.cpp",
+		"/C/GitHub/PulseSensor/mbed Test/max30102.cpp",
+		"/C/GitHub/PulseSensor/mbed Test/max30102.h",
+		"/C/Program Files (x86)/Arduino/hardware/arduino/avr/libraries/Wire/src/utility/twi.h",
+		"/C/Program Files (x86)/Arduino/hardware/arduino/avr/libraries/Wire/src/utility/twi.c",
+		"/C/Users/acarro12/AppData/Local/Arduino15/packages/arduino/hardware/avr/1.6.14/libraries/Wire/src/Wire.h",
+		"/C/Users/acarro12/AppData/Local/Arduino15/packages/arduino/hardware/avr/1.6.14/libraries/Wire/src/utility/twi.h",
+		"/C/Program Files (x86)/Arduino/hardware/arduino/avr/libraries/Wire/src/Wire.cpp",
+		"/C/Program Files (x86)/Arduino/hardware/arduino/avr/libraries/Wire/src/Wire.h",
+		"/C/Program Files (x86)/Arduino/hardware/tools/avr/avr/include/compat/twi.h"
+	],
+	"find":
+	{
+		"height": 70.0
+	},
+	"find_in_files":
+	{
+		"height": 158.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"hemo",
+			"HandswitchCircuitType",
+			"io",
+			"handsw",
+			"buc",
+			"jaw",
+			"fBit",
+			"):])",
+			"auto",
+			"autoc",
+			"tooltip",
+			"Tooltip",
+			"tooltip",
+			"pow2",
+			"return",
+			"fBSel",
+			"shiftReg",
+			"pnOut",
+			"patLen",
+			"BitGen",
+			"upSample",
+			"gutter",
+			"column",
+			"ruler",
+			"__sinx",
+			"__w",
+			"YAvg",
+			"YSum",
+			"NFFT",
+			"self.cnt",
+			"outValid",
+			"output",
+			"self.buf",
+			"lint",
+			"\\t\\t",
+			"\\t",
+			"\\t\\t",
+			"\\t\\t\\t\\t",
+			"'\\t\\t'",
+			"Address",
+			"Data",
+			"Cmd",
+			"Val",
+			"Delay",
+			"array_page",
+			"array_block",
+			"LabView",
+			"Script",
+			"editText",
+			"name_of_file",
+			"file_path",
+			"x",
+			"ROM",
+			"EEPROM",
+			"KEY[0] = 1'b1;",
+			"debounce_DE2_SW",
+			"4800",
+			"2400",
+			"1200",
+			"debounce_DE2_SW",
+			"is_factor_of",
+			"set",
+			"your_exam_module",
+			"minim",
+			"Inputs_ext_dbc",
+			"Inputs_ext",
+			"cio_in_type_o",
+			"SS_CTRL",
+			"RST_SS_CTRL",
+			"c_HeaderEnd",
+			"RxReg",
+			"QOut",
+			"RxReg",
+			"TX_DLY",
+			"IntState",
+			"TX_DLY",
+			"IntState",
+			"c_QRxTo",
+			"c_QMax",
+			"SendTx_stb",
+			"c_SampDly",
+			"c_Stop0Len",
+			"c_Start1End",
+			"c_DataLenHi",
+			"c_AddrLenLo",
+			"c_SampDly",
+			"NextSamp",
+			"SendTx_stb",
+			"c_QMax",
+			"SEND_TX",
+			"c_QRxTo",
+			"c_QGetRx",
+			"WAIT_FOR_START",
+			"CLK_10MHZ",
+			"Clk_10MHz",
+			"CLK_10MHZ",
+			"Clk_10MHz",
+			"CLK_10MHZ",
+			"Clk_10MHz",
+			"c_HeaderEnd",
+			"QFreqOffset",
+			"INPUT_MUX",
+			"Q_FREQ_OFFSET",
+			"interpreter",
+			"Aux",
+			"EepromTransLen",
+			"EepromDone",
+			"EepromStrt",
+			"EepromPDbc",
+			"AuxEnb",
+			"EepromDbc",
+			"AuxEnb",
+			"EepromP",
+			"EeRstFound",
+			"AuxEnb",
+			"32",
+			"cio_out_pullen_o",
+			"EEPROMP_ASIC",
+			"AUX_ASIC",
+			"1'bZ",
+			"AUX_ASIC",
+			"EEPROMP_ASIC",
+			"CioIn",
+			"Reset_n"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"F_BIT",
+			"__fBSel",
+			"__shiftReg",
+			"__patLen",
+			"__BitGen",
+			"upSampRate",
+			"__SIN_X",
+			"__W",
+			"yAvg",
+			"ySum",
+			"nfft",
+			"self.dumpCnt",
+			"filtOutValid",
+			"filtOut",
+			"self.__buf",
+			"\\t\\t    ",
+			"\\t\\t",
+			"\\t",
+			"\\t\\t",
+			"'\\t\\t\\t\\t'",
+			"addr",
+			"data",
+			"cmd",
+			"val",
+			"delay",
+			"pageDef",
+			"blockDef",
+			"labView",
+			"script",
+			"textFile",
+			"nameOfFile",
+			"filePath"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 9,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "fft.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4022,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3275,
+								3315
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1020.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "intdump.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2613,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1315,
+								1327
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 30.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "fir.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2033,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1065,
+								1212
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 135.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "agc.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3180,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1636,
+								1643
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 45.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "movavg.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1998,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								199,
+								199
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "bitgen.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 9763,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								9443,
+								9443
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 3930.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "noisegen.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2368,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								445,
+								451
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"auto_name": "import numpy as np",
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 22.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "misc.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2096,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1420,
+								1537
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "qtrratedwncvt.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1593,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1049,
+								1169
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "bpsksim.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2242,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								738,
+								738
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"auto_name": "import numpy as np",
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 616.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "test.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 120,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								120,
+								120
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 25.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			],
+			[
+				0,
+				1,
+				1,
+				2
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			0.832477535302,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 141.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.stino_log":
+	{
+		"height": 98.0
+	},
+	"pinned_build_system": "Anaconda Python Builder",
+	"project": "pydsp.sublime-project",
+	"replace":
+	{
+		"height": 114.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"",
+				"C:\\Subversion\\CHAP\\FPGA Test Set\\HDL\\ASIC_Project.sublime-project"
+			]
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 266.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
