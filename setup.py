@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='pydsp',
       version='1.0',
@@ -6,6 +6,6 @@ setup(name='pydsp',
       url='None',
       author='Andrew Carroll',
       author_email='Unknown',
-      py_modules = ['bitgen'],
       license='None',
+      packages=find_packages(),
       zip_safe=False)
