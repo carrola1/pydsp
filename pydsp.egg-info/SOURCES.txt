@@ -1,0 +1,6 @@
+pydsp/agc.py
+pydsp.egg-info/PKG-INFO
+pydsp.egg-info/SOURCES.txt
+pydsp.egg-info/dependency_links.txt
+pydsp.egg-info/not-zip-safe
+pydsp.egg-info/top_level.txt

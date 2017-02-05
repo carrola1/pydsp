@@ -45,3 +45,8 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+*.pyc
+*.pyc
+*.pyc
+__pycache__/qtrratedwncvt.cpython-35.pyc
+__pycache__/noisegen.cpython-35.pyc
