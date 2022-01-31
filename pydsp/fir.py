@@ -7,6 +7,8 @@ class FIR:
     Description:    Implements FIR filter.
     
     Attributes:     taps:       Filter taps
+                    scale_mult  Value to scale multiply results by prior to accumulate
+                    scale_accum Value to scale accumulator output by
                     length:     Length of filter
                     shiftReg:   Filter shift register
     
@@ -15,8 +17,10 @@ class FIR:
                     calc(data):     Return filtered data array
     """
 
-    def __init__(self, taps):
+    def __init__(self, taps, scale_mult=1, scale_accum=1):
         self.taps = taps
+        self.scale_mult = scale_mult
+        self.scale_accum = scale_accum
         self.length = taps.size
         self.shiftReg = np.zeros(self.length)
 
@@ -56,7 +60,7 @@ class FIR:
         for ii in range(0,data.size):
             self.shiftReg = np.roll(self.shiftReg,1)
             self.shiftReg[0] = data[ii]
-            filtData[ii] = sum(self.shiftReg*self.taps)
+            filtData[ii] = sum(self.shiftReg*self.taps*self.scale_mult)*self.scale_accum
         return filtData
 
 """

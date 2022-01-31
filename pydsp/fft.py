@@ -79,7 +79,7 @@ class Fft:
             ySum += Y**2;
         yAvg = ySum/2**np.floor(np.log2(self.numAvg));
 
-        freq = self.fs/2*np.linspace(0,1,nfft/2)/self.__range
+        freq = self.fs/2*np.linspace(0,1,int(nfft/2))/self.__range
         resp = 10*np.log10(yAvg[0:nfft//2])
         return freq,resp
 
@@ -113,8 +113,9 @@ class Fft:
         freq,resp = self.__crunch(data)
         return freq,resp    
 
-"""
+
 # EXAMPLE:
+'''
 f = 1000
 t = np.arange(0,1/f*10,1/f/100)
 data = np.sin(2*np.pi*f*t)
@@ -123,4 +124,4 @@ plt.plot(t,data)
 plt.draw()
 test = Fft(100e3,'kHz',2)
 freq,dataOut = test.plot(data)
-"""
+'''
